@@ -1,0 +1,444 @@
+<queries>
+	<query name="com.hanovertwpschools.transfinder.students_and_contacts.export" flattened="true" coreTable="students" tags="">
+		<summary>Students Export for TransFinder</summary>
+		<description>Student Contacts Export for TransFinder</description>
+		<columns>
+			<column column="students.student_number">000_Student_ID</column>
+			<column column="students.last_name">001_Last_Name</column>
+			<column column="students.first_name">002_First_Name</column>
+			<column column="students.middle_name">003_Middle_Initial</column>
+			<column column="students.grade_level">004_Grade_level</column>
+			<column column="students.schoolid">005_School_Code</column>
+			<column column="students.ethnicity">006_Ethnic_Code</column>
+			<column column="students.street">007_Residential_Street_Address</column>
+			<column column="students.zip">008_Residential_Street_Zip_Code</column>
+			<column column="students.mailing_street">009_Mailing_Address_1</column>
+			<column column="students.mailing_street">010_Mailing_Address_2</column>
+			<column column="students.mailing_city">011_Mailing_City</column>
+			<column column="students.mailing_state">012_Mailing_State</column>
+			<column column="students.mailing_zip">013_Mailing_ZIP</column>
+			<column column="person.lastName">014_Custody1_Last_Name</column>
+			<column column="person.firstname">015_Custody1_First_Name</column>
+			<column column="person.middlename">016_Custody1_Middle_Name</column>
+			<column column="personaddress.street">017_Custody1_Street</column>
+			<column column="personaddress.linetwo">018_Custody1_Street2</column>
+			<column column="personaddress.city">019_Custody1_City</column>
+			<column column="codeset.code">020_Custody1_State</column>
+			<column column="personaddress.postalcode">021_Custody1_Zip</column>
+			<column column="PhoneNumber.PhoneNumber">022_Custody1_Work_Phone</column>
+			<column column="PhoneNumber.PhoneNumber">023_Custody1_Cell_Phone</column>
+			<column column="PhoneNumber.PhoneNumber">024_Custody1_Home_Phone</column>
+			<column column="EmailAddress.EmailAddress">025_Custody1_Email</column>
+			<column column="person.lastName">026_Custody2_Last_Name</column>
+			<column column="person.firstname">027_Custody2_First_Name</column>
+			<column column="person.middlename">028_Custody2_Middle_Name</column>
+			<column column="personaddress.street">029_Custody2_Street</column>
+			<column column="personaddress.linetwo">030_Custody2_Street2</column>
+			<column column="personaddress.city">031_Custody2_City</column>
+			<column column="codeset.code">032_Custody2_State</column>
+			<column column="personaddress.postalcode">033_Custody2_Zip</column>
+			<column column="PhoneNumber.PhoneNumber">034_Custody2_Work_Phone</column>
+			<column column="PhoneNumber.PhoneNumber">035_Custody2_Cell_Phone</column>
+			<column column="PhoneNumber.PhoneNumber">036_Custody2_Home_Phone</column>
+			<column column="EmailAddress.EmailAddress">037_Custody2_Email</column>
+			<column column="person.lastName">038_Custody3_Last_Name</column>
+			<column column="person.firstname">039_Custody3_First_Name</column>
+			<column column="person.middlename">040_Custody3_Middle_Name</column>
+			<column column="personaddress.street">041_Custody3_Street</column>
+			<column column="personaddress.linetwo">042_Custody3_Street2</column>
+			<column column="personaddress.city">043_Custody3_City</column>
+			<column column="codeset.code">044_Custody3_State</column>
+			<column column="personaddress.postalcode">045_Custody3_Zip</column>
+			<column column="PhoneNumber.PhoneNumber">046_Custody3_Work_Phone</column>
+			<column column="PhoneNumber.PhoneNumber">047_Custody3_Cell_Phone</column>
+			<column column="PhoneNumber.PhoneNumber">048_Custody3_Home_Phone</column>
+			<column column="EmailAddress.EmailAddress">049_Custody3_Email</column>
+			<column column="students.dob">050_Date_of_Birth</column>
+			<column column="s_nj_stu_x.SpecialEd_Classification">051_Disability_Codes</column>
+			<column column="students.gender">052_Gender</column>
+			<column column="students.last_name">053_PreSchool_Transportation_Type</column>
+			<column column="students.last_Name">054_Aide_Required</column>
+			<column column="students.last_Name">055_Eligible</column>
+			<column column="students.last_Name">056_Disabled</column>
+			<column column="students.last_Name">057_Transportation_Eligible</column>
+			<column column="students.last_Name">058_DESIGNEE_1_Name</column>
+			<column column="students.last_name">059_DESIGNEE_1_Cell_Phone</column>
+			<column column="students.last_name">060_DESIGNEE_1_Home_Phone</column>
+			<column column="students.last_name">061_DESIGNEE_2_Name</column>
+			<column column="students.last_name">062_DESIGNEE_2_Cell_Phone</column>
+			<column column="students.last_name">063_DESIGNEE_2_Home_Phone</column>
+			<column column="students.state_studentnumber">064_State_ID</column>
+		</columns>
+		<sql>
+			<![CDATA[
+WITH nothing AS (
+	SELECT
+		NULL "nothing"
+	FROM
+		DUAL
+),
+addr_type_order AS (
+	SELECT
+		code,
+		codeset.description,
+		codeset.codesetid,
+		codeset.codetype
+	FROM
+		codeset
+	WHERE
+		codeset.codetype LIKE '%Address%'
+),
+stu_race AS (
+	SELECT
+		/* materialize */
+		students.dcid AS students_dcid,
+		listagg(studentrace.racecd, '') WITHIN GROUP (
+			ORDER BY
+				students.dcid
+		) AS racecd
+	FROM
+		students
+		LEFT JOIN studentrace ON students.id = studentrace.studentid
+	WHERE
+		students.enroll_status IN (0)
+	GROUP BY
+		students.dcid
+),
+myStudents AS (
+	SELECT
+		/*+ materialize */
+		students.dcid,
+		students.student_number,
+		students.last_name,
+		students.first_name,
+		students.grade_level,
+		students.schoolid,
+		students.middle_name,
+		students.gender,
+		U_DEF_EXT_STUDENTS.Transportation_Preschool_Type,
+		stu_race.racecd,
+		students.dob,
+		students.street,
+		students.zip,
+		students.mailing_street,
+		students.mailing_city,
+		students.mailing_state,
+		students.mailing_zip,
+		U_DEF_EXT_STUDENTS.psr_stu_designee1name,
+		U_DEF_EXT_STUDENTS.psr_stu_designee1cph,
+		U_DEF_EXT_STUDENTS.psr_stu_designee1hph,
+		U_DEF_EXT_STUDENTS.psr_stu_designee2name,
+		U_DEF_EXT_STUDENTS.psr_stu_designee2cph,
+		u_def_ext_students.psr_stu_designee2hph,
+		students.state_studentnumber,
+		CASE
+			WHEN s_nj_stu_x.specialed_classification = '17' THEN NULL
+			WHEN s_nj_stu_x.specialed_classification = '00' THEN NULL
+			WHEN s_nj_stu_x.specialed_classification = '99' THEN NULL
+			ELSE s_nj_stu_x.specialed_classification
+		END Special_Education,
+		NULL "EOQ"
+	FROM
+		STUDENTS
+		LEFT JOIN s_nj_stu_x ON students.dcid = s_nj_stu_x.studentsdcid
+		LEFT JOIN U_DEF_EXT_STUDENTS ON students.dcid = U_DEF_EXT_STUDENTS.studentsdcid
+		LEFT JOIN (
+			SELECT
+				*
+			FROM
+				stu_race
+		) stu_race ON students.dcid = stu_race.students_dcid
+	WHERE
+		students.enroll_status IN (-1, 0)
+),
+/* WITH */
+Contacts AS (
+	SELECT
+		/*+ materialize */
+		myStudents.DCID,
+		Person.lastname Last_Name,
+		Person.FirstName First_Name,
+		Person.Middlename Middle_Name,
+		ContactCodeset.Code ContactRelation,
+		COALESCE(StudentContactDetail.isCustodial, 0) isCustodial,
+		NVL2(
+			MobilePhoneNumber.PhoneNumber,
+			SUBSTR(MobilePhoneNumber.PhoneNumber, 1, 3) || '-' || SUBSTR(MobilePhoneNumber.PhoneNumber, 4, 3) || '-' || SUBSTR(MobilePhoneNumber.PhoneNumber, 7),
+			NULL
+		) MobilePhone,
+		NVL2(
+			HomePhoneNumber.PhoneNumber,
+			SUBSTR(HomePhoneNumber.PhoneNumber, 1, 3) || '-' || SUBSTR(HomePhoneNumber.PhoneNumber, 4, 3) || '-' || SUBSTR(HomePhoneNumber.PhoneNumber, 7),
+			NULL
+		) HomePhone,
+		NVL2(
+			WorkPhoneNumber.PhoneNumber,
+			SUBSTR(WorkPhoneNumber.PhoneNumber, 1, 3) || '-' || SUBSTR(WorkPhoneNumber.PhoneNumber, 4, 3) || '-' || SUBSTR(WorkPhoneNumber.PhoneNumber, 7),
+			NULL
+		) WorkPhone,
+		/* 
+		 MobilePhoneCodeset.Code,
+		 HomePhoneCodeset.Code, 
+		 */
+		LOWER(EmailAddress.EmailAddress) Email,
+		DENSE_RANK() OVER (
+			PARTITION BY myStudents.DCID
+			ORDER BY
+				StudentContactAssoc.ContactPriorityOrder
+		) PriorityRank,
+		DENSE_RANK() OVER (
+			PARTITION BY myStudents.DCID,
+			StudentContactAssoc.ContactPriorityOrder
+			ORDER BY
+				MobilePersonPhoneNumberAssoc.PhoneNumberPriorityOrder
+		) MobilePhoneRank,
+		DENSE_RANK() OVER (
+			PARTITION BY myStudents.DCID,
+			StudentContactAssoc.ContactPriorityOrder
+			ORDER BY
+				HomePersonPhoneNumberAssoc.PhoneNumberPriorityOrder
+		) HomePhoneRank,
+		DENSE_RANK() OVER (
+			PARTITION BY myStudents.DCID,
+			StudentContactAssoc.ContactPriorityOrder
+			ORDER BY
+				WorkPersonPhoneNumberAssoc.PhoneNumberPriorityOrder
+		) WorkPhoneRank,
+		DENSE_RANK() OVER (
+			PARTITION BY myStudents.DCID,
+			StudentContactAssoc.ContactPriorityOrder
+			ORDER BY
+				PersonEmailAddressAssoc.EmailAddressPriorityOrder
+		) EmailRank,
+		personaddress.street,
+		personaddress.linetwo,
+		personaddress.city,
+		statecodeset.code,
+		personaddress.postalcode,
+		personaddress.geocodelatitude,
+		personaddress.geocodelongitude,
+		personaddressassoc.addresstypecodesetid,
+		DENSE_RANK() OVER (
+			PARTITION BY myStudents.DCID,
+			StudentContactAssoc.ContactPriorityOrder,
+			personaddress.street,
+			personaddress.linetwo,
+			personaddress.city,
+			statecodeset.code,
+			personaddress.postalcode,
+			personaddress.geocodelatitude,
+			personaddress.geocodelongitude
+			ORDER BY
+				COALESCE(personaddressassoc.addresstypecodesetid, 9999) ASC,
+				PersonAddressAssoc.AddressPriorityOrder
+		) AddressRank
+	FROM
+		(
+			SELECT
+				*
+			FROM
+				myStudents
+		) myStudents
+		LEFT JOIN StudentContactAssoc ON myStudents.DCID = StudentContactAssoc.StudentDCID
+		LEFT JOIN StudentContactDetail ON StudentContactDetail.studentcontactassocid = StudentContactAssoc.studentcontactassocid
+		/* LEFT JOIN StudentContactDetail USING (StudentContactAssocID) */
+		AND TRUNC(SYSDATE) BETWEEN COALESCE(StudentContactDetail.StartDate, TRUNC(SYSDATE))
+		AND COALESCE(StudentContactDetail.EndDate, TRUNC(SYSDATE))
+		AND COALESCE(StudentContactDetail.isCustodial, 0) = 1
+		AND COALESCE(StudentContactDetail.isActive, 0) = 1
+		LEFT JOIN Person ON Person.id = StudentContactAssoc.PersonId
+		AND person.isactive = 1
+		LEFT JOIN PersonEmailAddressAssoc ON StudentContactAssoc.PersonID = PersonEmailAddressAssoc.PersonID
+		LEFT JOIN EmailAddress USING (EmailAddressID)
+		LEFT JOIN Codeset MobilePhoneCodeset ON MobilePhoneCodeset.CodeType = 'Phone'
+		AND MobilePhoneCodeset.Code = 'Mobile'
+		LEFT JOIN PersonPhoneNumberAssoc MobilePersonPhoneNumberAssoc ON StudentContactAssoc.PersonID = MobilePersonPhoneNumberAssoc.PersonID
+		AND MobilePersonPhoneNumberAssoc.PhoneTypeCodesetID = MobilePhoneCodeset.CodesetID
+		LEFT JOIN PhoneNumber MobilePhoneNumber ON MobilePhoneNumber.PhoneNumberID = MobilePersonPhoneNumberAssoc.PhoneNumberID
+		/* LEFT JOIN PhoneNumber USING (PhoneNumberID) */
+		LEFT JOIN Codeset HomePhoneCodeset ON HomePhoneCodeset.CodeType = 'Phone'
+		AND HomePhoneCodeset.Code = 'Home'
+		LEFT JOIN PersonPhoneNumberAssoc HomePersonPhoneNumberAssoc ON StudentContactAssoc.PersonID = HomePersonPhoneNumberAssoc.PersonID
+		AND HomePersonPhoneNumberAssoc.PhoneTypeCodesetID = HomePhoneCodeset.CodesetID
+		LEFT JOIN phonenumber HomePhoneNumber ON HomePhoneNumber.PhoneNumberID = HomePersonPhoneNumberAssoc.PhoneNumberID
+		/* LEFT JOIN PhoneNumber USING (PhoneNumberID) */
+		LEFT JOIN Codeset WorkPhoneCodeset ON WorkPhoneCodeset.CodeType = 'Phone'
+		AND WorkPhoneCodeset.Code = 'Work'
+		LEFT JOIN PersonPhoneNumberAssoc WorkPersonPhoneNumberAssoc ON StudentContactAssoc.PersonID = WorkPersonPhoneNumberAssoc.PersonID
+		AND WorkPersonPhoneNumberAssoc.PhoneTypeCodesetID = WorkPhoneCodeset.CodesetID
+		LEFT JOIN phonenumber WorkPhoneNumber ON WorkPhoneNumber.PhoneNumberID = WorkPersonPhoneNumberAssoc.PhoneNumberID
+		/* LEFT JOIN PhoneNumber USING (PhoneNumberID) */
+		LEFT JOIN Codeset ContactCodeset ON ContactCodeset.codesetid = StudentContactDetail.relationshiptypecodesetid
+		LEFT JOIN personaddressassoc ON personaddressassoc.personid = person.id
+		AND TRUNC(SYSDATE) BETWEEN COALESCE(personaddressassoc.StartDate, TRUNC(SYSDATE))
+		AND COALESCE(PersonAddressAssoc.EndDate, TRUNC(SYSDATE))
+		LEFT JOIN personaddress USING (personaddressid)
+		LEFT JOIN codeset StateCodeSet ON StateCodeSet.codesetid = personaddress.statescodesetid
+)
+SELECT
+	myStudents.student_Number AS "Student_ID",
+	myStudents.last_name AS "Last_Name",
+	myStudents.first_name AS "First_Name",
+	COALESCE(substr(myStudents.middle_name, 1, 1), '') AS "Middle_Initial",
+	myStudents.grade_level AS "Grade_Level",
+	myStudents.schoolid AS "School_Code",
+	myStudents.racecd AS "Ethnic_Code",
+	myStudents.street AS "Residential_Street_Address",
+	myStudents.zip AS "Residential_Zip_Code",
+	myStudents.mailing_street AS "Mailing_Address_1",
+	COALESCE(NULL, '') AS "Mailing_Address_2",
+	myStudents.mailing_city AS "Mailing_City",
+	myStudents.mailing_state AS "Mailing_State",
+	myStudents.mailing_zip AS "Mailing_ZIP",
+	COALESCE(C1.Last_Name, '') AS "Custody1_Last_Name",
+	COALESCE(C1.First_Name, '') AS "Custody1_First_Name",
+	COALESCE(C1.Middle_Name, '') AS "Custody1_Middle_Name",
+	COALESCE(C1.Street, '') AS "Custody1_Street",
+	COALESCE(C1.linetwo, '') AS "Custody1_Street2",
+	COALESCE(C1.City, '') AS "Custody1_City",
+	COALESCE(C1.code, '') AS "Custody1_State",
+	COALESCE(C1.postalcode, '') AS "Custody1_Zip",
+	COALESCE(C1.WorkPhone, '') AS "Custody1_Work_Phone",
+	COALESCE(C1.MobilePhone, '') AS "Custody1_Cell_Phone",
+	COALESCE(C1.HomePhone, '') AS "Custody1_Home_Phone",
+	COALESCE(C1.Email, '') AS "Custody1_Email",
+	COALESCE(C2.Last_Name, '') AS "Custody2_Last_Name",
+	COALESCE(C2.First_Name, '') AS "Custody2_First_Name",
+	COALESCE(C2.Middle_Name, '') AS "Custody2_Middle_Name",
+	COALESCE(C2.Street, '') AS "Custody2_Street",
+	COALESCE(C2.linetwo, '') AS "Custody2_Street2",
+	COALESCE(C2.City, '') AS "Custody2_City",
+	COALESCE(C2.code, '') AS "Custody2_State",
+	COALESCE(C2.postalcode, '') AS "Custody2_Zip",
+	COALESCE(C2.WorkPhone, '') AS "Custody2_Work_Phone",
+	COALESCE(C2.MobilePhone, '') AS "Custody2_Cell_Phone",
+	COALESCE(C2.HomePhone, '') AS "Custody2_Home_Phone",
+	COALESCE(C2.Email, '') AS "Custody2_Email",
+	COALESCE(C3.Last_Name, '') AS "Custody3_Last_Name",
+	COALESCE(C3.First_Name, '') AS "Custody3_First_Name",
+	COALESCE(C3.Middle_Name, '') AS "Custody3_Middle_Name",
+	COALESCE(C3.Street, '') AS "Custody3_Street",
+	COALESCE(C3.linetwo, '') AS "Custody3_Street2",
+	COALESCE(C3.City, '') AS "Custody3_City",
+	COALESCE(C3.code, '') AS "Custody3_State",
+	COALESCE(C3.postalcode, '') AS "Custody3_Zip",
+	COALESCE(C3.WorkPhone, '') AS "Custody3_Work_Phone",
+	COALESCE(C3.MobilePhone, '') AS "Custody3_Cell_Phone",
+	COALESCE(C3.HomePhone, '') AS "Custody3_Home_Phone",
+	COALESCE(C3.Email, '') AS "Custody3_Email",
+	myStudents.dob AS "Date_of_Birth",
+	COALESCE(myStudents.Special_Education, '') AS "Disability_Codes",
+	myStudents.gender AS "Gender",
+	CASE
+		WHEN myStudents.grade_level IN (-1, -2) THEN COALESCE(myStudents.Transportation_Preschool_Type, '')
+		ELSE 'N/A'
+	END AS "Transportation_PreSchool_Type",
+	COALESCE(NULL, 'N') AS "Aide_Required",
+	COALESCE(NULL, 'N') AS "Eligible",
+	COALESCE(NULL, 'N') AS "Disabled",
+	COALESCE(NULL, 'N') AS "Transportation_Eligible",
+	CASE
+		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee1name, 'N/A')
+		ELSE 'N/A'
+	END "DESIGNEE_1_Name",
+	CASE
+		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2cph, 'N/A')
+		ELSE 'N/A'
+	END "DESIGNEE_1_Cell_Phone",
+	CASE
+		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2hph, 'N/A')
+		ELSE 'N/A'
+	END "DESIGNEE_1_Home_Phone",
+	CASE
+		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2name, 'N/A')
+		ELSE 'N/A'
+	END "DESIGNEE_2_Name",
+	CASE
+		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2cph, 'N/A')
+		ELSE 'N/A'
+	END "DESIGNEE_2_Cell_Phone",
+	CASE
+		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2hph, 'N/A')
+		ELSE 'N/A'
+	END "DESIGNEE_2_Home_Phone",
+	COALESCE(myStudents.State_StudentNumber, '') AS "State_StudentNumber"
+FROM
+	(
+		SELECT
+			*
+		FROM
+			myStudents
+	) myStudents
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			Contacts
+	) C1 ON myStudents.DCID = C1.DCID
+	AND COALESCE(C1.PriorityRank, -1) = 1
+	AND COALESCE(C1.WorkPhoneRank, -1) = 1
+	AND COALESCE(C1.HomePhoneRank, -1) = 1
+	AND COALESCE(C1.MobilePhoneRank, -1) = 1
+	AND COALESCE(C1.EmailRank, -1) = 1
+	AND COALESCE(C1.AddressRank, -1) = 1
+	AND COALESCE(C1.AddressTypeCodeSetID, 0) = 19
+	/* This syntax was used instead of a basic 'LEFT JOIN
+	 Contacts Contacts1' because it is probably the only
+	 way to reliably satisfy the PowerQuery WITH clause parser.
+	 Again SPECIAL THANKS!! to Eric Bauer for this awesome
+	 workaround! groups.io/g/PSUG/topic/29200258
+	 We are aliasing our CTE/WITH so we can call it multiple times
+	 with different needs and ensure we only get 1 row per student.
+	 We just use the alias in the SELECT to pull from whichever one
+	 we need.... e.g. Contacts1.PhoneNumber.
+	 Since we set up the PriorityRank, PhoneNumberRank, and
+	 EmailRank in the CTE, we can leverage them in our LEFT JOIN
+	 so we ensure we only get the first phone number and the first
+	 e-mail per contact. If you happen to want others, you can
+	 LEFT JOIN the CTE as much as you want adjusting the values.
+	 * PriorityRank is the individual contact in priority order,
+	 starting with 1. I don't think the COALESCE was necessary for
+	 this field now that I'm documenting this, but I think I did it
+	 for consistency with the other fields to follow.
+	 * PhoneNumberRank is the phone number priority for that given
+	 contact. We use COALESCE in case the contact does not have
+	 a cell phone number. We still want them to pull. By saying it
+	 has to equal 1, we only want the first phone number (if there
+	 are any).
+	 * EmailRank is the e-mail priority for that given contact.
+	 COALESCE() has the same purpose here as it did for PhoneNumberRank.
+	 */
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			Contacts
+	) C2 ON myStudents.DCID = C2.DCID
+	AND COALESCE(C2.PriorityRank, -1) = 2
+	AND COALESCE(C2.WorkPhoneRank, -1) = 1
+	AND COALESCE(C2.HomePhoneRank, -1) = 1
+	AND COALESCE(C2.MobilePhoneRank, -1) = 1
+	AND COALESCE(C2.EmailRank, -1) = 1
+	AND COALESCE(C2.AddressRank, -1) = 1
+	AND COALESCE(C2.AddressTypeCodeSetID, 0) = 19
+
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			Contacts
+	) C3 ON myStudents.DCID = C3.DCID
+	AND COALESCE(C3.PriorityRank, -1) = 3
+	AND COALESCE(C3.WorkPhoneRank, -1) = 1
+	AND COALESCE(C3.HomePhoneRank, -1) = 1
+	AND COALESCE(C3.MobilePhoneRank, -1) = 1
+	AND COALESCE(C3.EmailRank, -1) = 1
+	AND COALESCE(C3.AddressRank, -1) = 1
+	AND COALESCE(C3.AddressTypeCodeSetID, 0) = 19
+
+ORDER BY
+	STUDENT_NUMBER ASC
+			]]>
+		</sql>
+	</query>
+</queries>
