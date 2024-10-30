@@ -56,18 +56,11 @@
 			<column column="students.dob">050_Date_of_Birth</column>
 			<column column="s_nj_stu_x.SpecialEd_Classification">051_Disability_Codes</column>
 			<column column="students.gender">052_Gender</column>
-			<column column="students.last_name">053_PreSchool_Transportation_Type</column>
-			<column column="students.last_Name">054_Aide_Required</column>
-			<column column="students.last_Name">055_Eligible</column>
-			<column column="students.last_Name">056_Disabled</column>
-			<column column="students.last_Name">057_Transportation_Eligible</column>
-			<column column="students.last_Name">058_DESIGNEE_1_Name</column>
-			<column column="students.last_name">059_DESIGNEE_1_Cell_Phone</column>
-			<column column="students.last_name">060_DESIGNEE_1_Home_Phone</column>
-			<column column="students.last_name">061_DESIGNEE_2_Name</column>
-			<column column="students.last_name">062_DESIGNEE_2_Cell_Phone</column>
-			<column column="students.last_name">063_DESIGNEE_2_Home_Phone</column>
-			<column column="students.state_studentnumber">064_State_ID</column>
+			<column column="students.last_Name">053_Aide_Required</column>
+			<column column="students.last_Name">054_Eligible</column>
+			<column column="students.last_Name">055_Disabled</column>
+			<column column="students.last_Name">056_Transportation_Eligible</column>
+			<column column="students.state_studentnumber">057_State_ID</column>
 		</columns>
 		<sql>
 			<![CDATA[
@@ -124,12 +117,6 @@ myStudents AS (
 		students.mailing_city,
 		students.mailing_state,
 		students.mailing_zip,
-		U_DEF_EXT_STUDENTS.psr_stu_designee1name,
-		U_DEF_EXT_STUDENTS.psr_stu_designee1cph,
-		U_DEF_EXT_STUDENTS.psr_stu_designee1hph,
-		U_DEF_EXT_STUDENTS.psr_stu_designee2name,
-		U_DEF_EXT_STUDENTS.psr_stu_designee2cph,
-		u_def_ext_students.psr_stu_designee2hph,
 		students.state_studentnumber,
 		CASE
 			WHEN s_nj_stu_x.specialed_classification = '17' THEN NULL
@@ -329,38 +316,10 @@ SELECT
 	myStudents.dob AS "Date_of_Birth",
 	COALESCE(myStudents.Special_Education, '') AS "Disability_Codes",
 	myStudents.gender AS "Gender",
-	CASE
-		WHEN myStudents.grade_level IN (-1, -2) THEN COALESCE(myStudents.Transportation_Preschool_Type, '')
-		ELSE 'N/A'
-	END AS "Transportation_PreSchool_Type",
 	COALESCE(NULL, 'N') AS "Aide_Required",
 	COALESCE(NULL, 'N') AS "Eligible",
 	COALESCE(NULL, 'N') AS "Disabled",
 	COALESCE(NULL, 'N') AS "Transportation_Eligible",
-	CASE
-		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee1name, 'N/A')
-		ELSE 'N/A'
-	END "DESIGNEE_1_Name",
-	CASE
-		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2cph, 'N/A')
-		ELSE 'N/A'
-	END "DESIGNEE_1_Cell_Phone",
-	CASE
-		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2hph, 'N/A')
-		ELSE 'N/A'
-	END "DESIGNEE_1_Home_Phone",
-	CASE
-		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2name, 'N/A')
-		ELSE 'N/A'
-	END "DESIGNEE_2_Name",
-	CASE
-		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2cph, 'N/A')
-		ELSE 'N/A'
-	END "DESIGNEE_2_Cell_Phone",
-	CASE
-		WHEN myStudents.grade_level IN (0, -1, -2) THEN COALESCE(myStudents.psr_stu_designee2hph, 'N/A')
-		ELSE 'N/A'
-	END "DESIGNEE_2_Home_Phone",
 	COALESCE(myStudents.State_StudentNumber, '') AS "State_StudentNumber"
 FROM
 	(
